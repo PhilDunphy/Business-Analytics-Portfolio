@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Resource Utilization Analysis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --navy: #1B2A4A;
+            --dark-teal: #1A6B5C;
+            --teal: #2EC4B6;
+            --gold: #D4A853;
+            --red: #E74C3C;
+            --green: #27AE60;
+            --bg: #0C1220;
+            --card-bg: rgba(20, 30, 52, 0.65);
+            --card-border: rgba(46, 196, 182, 0.12);
+            --text: #E8ECF1;
+            --text-muted: #8899AA;
+            --glass-blur: 16px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(ellipse at 20% 50%, rgba(46, 196, 182, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(212, 168, 83, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 80%, rgba(27, 42, 74, 0.15) 0%, transparent 50%);
+            animation: drift 20s ease-in-out infinite alternate;
+            z-index: -1;
+        }
+
+        @keyframes drift {
+            0% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+
+            100% {
+                transform: translate(-3%, 3%) rotate(2deg);
+            }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 32px 24px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--teal), var(--gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            font-size: 1rem;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .badge {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 6px 18px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            background: rgba(46, 196, 182, 0.12);
+            color: var(--teal);
+            border: 1px solid rgba(46, 196, 182, 0.25);
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text);
+            margin: 48px 0 20px;
+            padding-left: 14px;
+            border-left: 3px solid var(--teal);
+        }
+
+        /* KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 16px;
+            margin-bottom: 10px;
+        }
+
+        .kpi-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(var(--glass-blur));
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 22px 18px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .kpi-card:nth-child(1)::before {
+            background: var(--teal);
+        }
+
+        .kpi-card:nth-child(2)::before {
+            background: var(--gold);
+        }
+
+        .kpi-card:nth-child(3)::before {
+            background: var(--green);
+        }
+
+        .kpi-card:nth-child(4)::before {
+            background: var(--red);
+        }
+
+        .kpi-card:nth-child(5)::before {
+            background: #8E44AD;
+        }
+
+        .kpi-card:nth-child(6)::before {
+            background: #3498DB;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(46, 196, 182, 0.12);
+        }
+
+        .kpi-label {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .kpi-value {
+            font-size: 1.6rem;
+            font-weight: 700;
+        }
+
+        .kpi-card:nth-child(1) .kpi-value {
+            color: var(--teal);
+        }
+
+        .kpi-card:nth-child(2) .kpi-value {
+            color: var(--gold);
+        }
+
+        .kpi-card:nth-child(3) .kpi-value {
+            color: var(--green);
+        }
+
+        .kpi-card:nth-child(4) .kpi-value {
+            color: var(--red);
+        }
+
+        .kpi-card:nth-child(5) .kpi-value {
+            color: #8E44AD;
+        }
+
+        .kpi-card:nth-child(6) .kpi-value {
+            color: #3498DB;
+        }
+
+        /* Chart containers */
+        .chart-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        .chart-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(var(--glass-blur));
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 24px;
+            transition: transform 0.3s ease;
+        }
+
+        .chart-card.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .chart-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .chart-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(46, 196, 182, 0.15);
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 320px;
+        }
+
+        .chart-wrapper.tall {
+            height: 400px;
+        }
+
+        /* Utilization Table */
+        .util-table-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(var(--glass-blur));
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 24px;
+            overflow-x: auto;
+        }
+
+        .util-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .util-table th {
+            padding: 12px 14px;
+            text-align: center;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            font-weight: 600;
+            border-bottom: 2px solid var(--card-border);
+        }
+
+        .util-table th:first-child {
+            text-align: left;
+        }
+
+        .util-table td {
+            padding: 11px 14px;
+            text-align: center;
+            font-size: 0.92rem;
+            border-bottom: 1px solid rgba(46, 196, 182, 0.08);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .util-table td:first-child {
+            text-align: left;
+            font-weight: 500;
+        }
+
+        .util-table tr:hover {
+            background: rgba(46, 196, 182, 0.04);
+        }
+
+        /* Status badges */
+        .status {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status.high {
+            background: rgba(39, 174, 96, 0.15);
+            color: var(--green);
+        }
+
+        .status.medium {
+            background: rgba(212, 168, 83, 0.15);
+            color: var(--gold);
+        }
+
+        .status.low {
+            background: rgba(231, 76, 60, 0.15);
+            color: var(--red);
+        }
+
+        /* Insights */
+        .insights-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .insight-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(var(--glass-blur));
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 24px;
+        }
+
+        .insight-card h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            font-size: 1rem;
+        }
+
+        .insight-card ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .insight-card li {
+            padding: 6px 0;
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+            border-bottom: 1px solid rgba(46, 196, 182, 0.06);
+        }
+
+        .insight-card li:last-child {
+            border-bottom: none;
+        }
+
+        .insight-card li strong {
+            color: var(--text);
+        }
+
+        /* Scenario Table */
+        .scenario-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .scenario-table th {
+            padding: 12px 12px;
+            text-align: center;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            font-weight: 600;
+            border-bottom: 2px solid var(--card-border);
+        }
+
+        .scenario-table th:first-child {
+            text-align: left;
+        }
+
+        .scenario-table td {
+            padding: 11px 12px;
+            text-align: right;
+            border-bottom: 1px solid rgba(46, 196, 182, 0.08);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .scenario-table td:first-child {
+            text-align: left;
+            font-weight: 500;
+        }
+
+        .scenario-table tr:hover {
+            background: rgba(46, 196, 182, 0.04);
+        }
+
+        .scenario-table tr.highlight {
+            background: rgba(212, 168, 83, 0.08);
+        }
+
+        .scenario-table tr.highlight td {
+            font-weight: 700;
+            color: var(--gold);
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 40px 0 20px;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        .footer span {
+            color: var(--teal);
+            font-weight: 600;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.6rem;
+            }
+
+            .kpi-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .chart-grid,
+            .insights-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .kpi-value {
+                font-size: 1.4rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Campus Resource Utilization Analysis</h1>
+            <p class="subtitle">Consulting-Grade Analytics — Indian Engineering College Facilities</p>
+            <span class="badge">Arnav Petwal</span>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-label">Avg Utilization</div>
+                <div class="kpi-value" id="kpiAvgUtil">—</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Total Capacity</div>
+                <div class="kpi-value">1,190</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Most Utilised</div>
+                <div class="kpi-value" style="font-size:1.1rem">Central Library</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Least Utilised</div>
+                <div class="kpi-value" style="font-size:1.1rem">Auditorium</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Daily Op. Cost</div>
+                <div class="kpi-value">₹81,000</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Total Idle Hours</div>
+                <div class="kpi-value" id="kpiIdle">—</div>
+            </div>
+        </div>
+
+        <!-- Charts Row 1 -->
+        <h2 class="section-title">Utilization Overview</h2>
+        <div class="chart-grid">
+            <div class="chart-card">
+                <div class="chart-title">Average Utilization % by Facility</div>
+                <div class="chart-wrapper">
+                    <canvas id="utilBar"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">Capacity Distribution</div>
+                <div class="chart-wrapper">
+                    <canvas id="capPie"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hourly Heatmap -->
+        <h2 class="section-title">Hourly Usage Patterns</h2>
+        <div class="chart-grid">
+            <div class="chart-card full-width">
+                <div class="chart-title">Hourly Usage by Facility (6 AM – 11 PM)</div>
+                <div class="chart-wrapper tall">
+                    <canvas id="hourlyChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Utilization Metrics Table -->
+        <h2 class="section-title">Utilization Metrics</h2>
+        <div class="util-table-card">
+            <table class="util-table">
+                <thead>
+                    <tr>
+                        <th>Facility</th>
+                        <th>Capacity</th>
+                        <th>Peak Usage</th>
+                        <th>Peak Util %</th>
+                        <th>Avg Util %</th>
+                        <th>Idle Hrs</th>
+                        <th>Overcrowded Hrs</th>
+                        <th>Idle Capacity %</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="utilTableBody">
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Charts Row 2 -->
+        <h2 class="section-title">Efficiency Analysis</h2>
+        <div class="chart-grid">
+            <div class="chart-card">
+                <div class="chart-title">Peak vs Average Utilization %</div>
+                <div class="chart-wrapper">
+                    <canvas id="peakAvgBar"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">Daily Person-Hours by Facility</div>
+                <div class="chart-wrapper">
+                    <canvas id="personHrsBar"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Optimization Scenarios -->
+        <h2 class="section-title">Optimization Scenarios</h2>
+        <div class="util-table-card">
+            <table class="scenario-table">
+                <thead>
+                    <tr>
+                        <th>Scenario</th>
+                        <th>Avg Util %</th>
+                        <th>Person-Hours</th>
+                        <th>Idle Hours</th>
+                        <th>Overcrowded</th>
+                        <th>Daily Cost (₹)</th>
+                        <th>Cost / PH (₹)</th>
+                    </tr>
+                </thead>
+                <tbody id="scenarioTableBody">
+                </tbody>
+            </table>
+        </div>
+
+        <div class="chart-grid" style="margin-top:24px;">
+            <div class="chart-card">
+                <div class="chart-title">Utilization % by Scenario</div>
+                <div class="chart-wrapper">
+                    <canvas id="scenarioUtilBar"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">Cost per Person-Hour (₹) by Scenario</div>
+                <div class="chart-wrapper">
+                    <canvas id="scenarioCostBar"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Consulting Insights -->
+        <h2 class="section-title">Consulting Insights & Recommendations</h2>
+        <div class="insights-grid">
+            <div class="insight-card">
+                <h3><span class="icon" style="background:rgba(231,76,60,0.15);color:var(--red)">⚠</span> Key
+                    Inefficiencies</h3>
+                <ul>
+                    <li>Auditorium utilization at only ~17.8% — massive capacity wastage (500 seats)</li>
+                    <li>Central Library has 5 overcrowded hours daily with usage exceeding 85% capacity</li>
+                    <li>Two Computer Labs with identical capacity create scheduling redundancy</li>
+                    <li>Sports Complex is evening-biased; morning/afternoon slots nearly empty</li>
+                    <li>Total 30+ idle hours across all facilities with zero productive output</li>
+                </ul>
+            </div>
+            <div class="insight-card">
+                <h3><span class="icon" style="background:rgba(46,196,182,0.15);color:var(--teal)">🔍</span> Root Cause
+                    Analysis</h3>
+                <ul>
+                    <li><strong>Auditorium:</strong> Event-driven ad-hoc usage with no structured scheduling</li>
+                    <li><strong>Gym:</strong> Bi-modal peaks (6–8 AM, 4–6 PM) with midday dead zone</li>
+                    <li><strong>Labs:</strong> Timetable-mirrored schedules instead of complementary staggering</li>
+                    <li><strong>Study Rooms:</strong> Low morning usage; peaks only during exam season</li>
+                    <li>No centralised booking or real-time occupancy tracking system</li>
+                </ul>
+            </div>
+            <div class="insight-card">
+                <h3><span class="icon" style="background:rgba(39,174,96,0.15);color:var(--green)">💡</span>
+                    Recommendations</h3>
+                <ul>
+                    <li><strong>Quick Win:</strong> Deploy centralised facility booking app with live occupancy</li>
+                    <li>Stagger Computer Lab A & B schedules to eliminate duplicate idle periods</li>
+                    <li>Convert Auditorium to multi-use space during idle hours</li>
+                    <li>Introduce staggered gym slots tied to class timetable</li>
+                    <li>Deploy IoT sensors for real-time data and dynamic scheduling</li>
+                    <li>Close proven idle slots to cut operating costs by ~15–20%</li>
+                </ul>
+            </div>
+            <div class="insight-card">
+                <h3><span class="icon" style="background:rgba(212,168,83,0.15);color:var(--gold)">📈</span> Estimated
+                    Impact</h3>
+                <ul id="impactList">
+                    <li><strong>Current Utilization:</strong> <span id="impactCurrent">—</span></li>
+                    <li><strong>Optimised Utilization:</strong> <span id="impactOptimised">—</span></li>
+                    <li><strong>Utilization Uplift:</strong> <span id="impactUplift">—</span></li>
+                    <li><strong>Cost / PH Reduction:</strong> <span id="impactCostRed">—</span></li>
+                    <li><strong>Idle Hours Eliminated:</strong> <span id="impactIdleRed">—</span></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>Campus Resource Utilization Analysis &bull; <span>Arnav Petwal</span> &bull; Built with Python &amp;
+                Chart.js</p>
+        </div>
+    </div>
+
+    <script>
+        // ── Facility Data ─────────────────────────────────────────────
+        const facilities = [
+            {
+                name: "Gymnasium", capacity: 60,
+                hourly: [8, 25, 35, 15, 10, 12, 18, 22, 30, 45, 50, 38, 28, 15, 10, 8, 20, 35],
+                costPerHr: 450
+            },
+            {
+                name: "Central Library", capacity: 200,
+                hourly: [15, 30, 60, 90, 120, 140, 150, 165, 170, 180, 175, 160, 130, 100, 80, 60, 45, 25],
+                costPerHr: 800
+            },
+            {
+                name: "Computer Lab A", capacity: 80,
+                hourly: [5, 10, 55, 70, 75, 72, 68, 65, 60, 55, 50, 45, 35, 25, 15, 10, 8, 5],
+                costPerHr: 600
+            },
+            {
+                name: "Computer Lab B", capacity: 80,
+                hourly: [0, 5, 40, 60, 65, 70, 72, 68, 55, 40, 30, 25, 20, 15, 10, 5, 3, 0],
+                costPerHr: 600
+            },
+            {
+                name: "Study Room Block", capacity: 120,
+                hourly: [10, 15, 25, 40, 50, 55, 60, 65, 70, 80, 90, 100, 105, 95, 85, 70, 55, 40],
+                costPerHr: 350
+            },
+            {
+                name: "Auditorium", capacity: 500,
+                hourly: [0, 0, 50, 100, 350, 200, 80, 50, 30, 20, 15, 10, 50, 100, 300, 150, 50, 0],
+                costPerHr: 1200
+            },
+            {
+                name: "Sports Complex", capacity: 150,
+                hourly: [20, 40, 15, 10, 8, 12, 15, 20, 25, 35, 50, 65, 80, 100, 120, 130, 110, 70],
+                costPerHr: 500
+            },
+        ];
+
+        const HOURS = Array.from({ length: 18 }, (_, i) => `${i + 6}:00`);
+
+        // Derived metrics
+        facilities.forEach(f => {
+            f.totalPH = f.hourly.reduce((a, b) => a + b, 0);
+            f.maxPH = f.capacity * f.hourly.length;
+            f.avgUtil = (f.totalPH / f.maxPH) * 100;
+            f.peakUsage = Math.max(...f.hourly);
+            f.peakUtil = (f.peakUsage / f.capacity) * 100;
+            f.idleHrs = f.hourly.filter(u => u < f.capacity * 0.20).length;
+            f.crowdedHrs = f.hourly.filter(u => u > f.capacity * 0.85).length;
+            f.idleCapPct = ((f.maxPH - f.totalPH) / f.maxPH) * 100;
+            f.dailyCost = f.costPerHr * f.hourly.length;
+            f.costPerPH = f.dailyCost / f.totalPH;
+        });
+
+        const totalPH = facilities.reduce((a, f) => a + f.totalPH, 0);
+        const totalMax = facilities.reduce((a, f) => a + f.maxPH, 0);
+        const avgUtilAll = (totalPH / totalMax) * 100;
+        const totalIdle = facilities.reduce((a, f) => a + f.idleHrs, 0);
+
+        // Populate KPIs
+        document.getElementById('kpiAvgUtil').textContent = avgUtilAll.toFixed(1) + '%';
+        document.getElementById('kpiIdle').textContent = totalIdle;
+
+        // ── Scenarios ─────────────────────────────────────────────────
+        const scenarios = [
+            { name: "Base Case (Current)", util: 0, ph: 0, idle: 0, crowded: 0, cost: 0, costPH: 0 },
+            { name: "Redistribute (cap 70%)", util: 0, ph: 0, idle: 0, crowded: 0, cost: 0, costPH: 0 },
+            { name: "Redistribute (cap 60%)", util: 0, ph: 0, idle: 0, crowded: 0, cost: 0, costPH: 0 },
+            { name: "Extended Hours", util: 0, ph: 0, idle: 0, crowded: 0, cost: 0, costPH: 0 },
+            { name: "Close Idle Slots", util: 0, ph: 0, idle: 0, crowded: 0, cost: 0, costPH: 0 },
+            { name: "Capacity Right-Sizing", util: 0, ph: 0, idle: 0, crowded: 0, cost: 0, costPH: 0 },
+            { name: "Combined Optimized", util: 0, ph: 0, idle: 0, crowded: 0, cost: 0, costPH: 0 },
+        ];
+
+        // Redistribute helper
+        function redistribute(hourly, capacity, capPct) {
+            const cap = Math.floor(capacity * capPct);
+            let newUsage = [...hourly];
+            let excess = 0;
+            newUsage.forEach((u, i) => {
+                if (u > cap) { excess += u - cap; newUsage[i] = cap; }
+            });
+            const sortedIdx = [...Array(newUsage.length).keys()].sort((a, b) => newUsage[a] - newUsage[b]);
+            for (const idx of sortedIdx) {
+                if (excess <= 0) break;
+                const room = cap - newUsage[idx];
+                const add = Math.min(excess, room);
+                newUsage[idx] += add;
+                excess -= add;
+            }
+            return newUsage;
+        }
+
+        function calcMetrics(facilityOverrides) {
+            let tPH = 0, tMax = 0, tCost = 0, tIdle = 0, tCrowd = 0;
+            facilityOverrides.forEach(f => {
+                const ph = f.hourly.reduce((a, b) => a + b, 0);
+                const mx = f.capacity * f.hourly.length;
+                const cost = f.costPerHr * f.hourly.length;
+                const idle = f.hourly.filter(u => u < f.capacity * 0.20).length;
+                const crowd = f.hourly.filter(u => u > f.capacity * 0.85).length;
+                tPH += ph; tMax += mx; tCost += cost; tIdle += idle; tCrowd += crowd;
+            });
+            return {
+                util: (tPH / tMax) * 100,
+                ph: tPH, idle: tIdle, crowded: tCrowd, cost: tCost,
+                costPH: tCost / tPH
+            };
+        }
+
+        // Base case
+        const baseMetrics = calcMetrics(facilities);
+        scenarios[0] = { name: "Base Case (Current)", ...baseMetrics };
+
+        // Redistribute 70%
+        let r70 = facilities.map(f => ({ ...f, hourly: redistribute(f.hourly, f.capacity, 0.70) }));
+        const m70 = calcMetrics(r70);
+        scenarios[1] = { name: "Redistribute (cap 70%)", ...m70 };
+
+        // Redistribute 60%
+        let r60 = facilities.map(f => ({ ...f, hourly: redistribute(f.hourly, f.capacity, 0.60) }));
+        const m60 = calcMetrics(r60);
+        scenarios[2] = { name: "Redistribute (cap 60%)", ...m60 };
+
+        // Extended hours
+        let ext = facilities.map(f => {
+            if (f.avgUtil > 50) {
+                const extra = [Math.floor(f.peakUsage * 0.3), Math.floor(f.peakUsage * 0.3)];
+                return { ...f, hourly: [...f.hourly, ...extra] };
+            }
+            return { ...f };
+        });
+        const mExt = calcMetrics(ext);
+        scenarios[3] = { name: "Extended Hours", ...mExt };
+
+        // Close idle slots
+        let trimmed = facilities.map(f => {
+            const threshold = f.capacity * 0.15;
+            let nh = f.hourly.filter(u => u >= threshold);
+            if (nh.length === 0) nh = f.hourly;
+            return { ...f, hourly: nh };
+        });
+        const mTrim = calcMetrics(trimmed);
+        scenarios[4] = { name: "Close Idle Slots", ...mTrim };
+
+        // Capacity right-sizing
+        let resized = facilities.map(f => {
+            const newCap = f.avgUtil < 40 ? Math.floor(f.peakUsage * 1.2) : f.capacity;
+            return { ...f, capacity: newCap };
+        });
+        const mResize = calcMetrics(resized);
+        scenarios[5] = { name: "Capacity Right-Sizing", ...mResize };
+
+        // Combined
+        let combined = facilities.map(f => {
+            let nh = redistribute(f.hourly, f.capacity, 0.70);
+            const threshold = f.capacity * 0.15;
+            nh = nh.map(u => u >= threshold ? u : Math.floor(threshold));
+            const newCap = f.avgUtil < 40 ? Math.floor(f.peakUsage * 1.2) : f.capacity;
+            return { ...f, hourly: nh, capacity: newCap, costPerHr: f.costPerHr * 0.95 };
+        });
+        const mComb = calcMetrics(combined);
+        scenarios[6] = { name: "Combined Optimized", ...mComb };
+
+        // Populate impact section
+        document.getElementById('impactCurrent').textContent = scenarios[0].util.toFixed(1) + '%';
+        document.getElementById('impactOptimised').textContent = scenarios[6].util.toFixed(1) + '%';
+        document.getElementById('impactUplift').textContent = '+' + (scenarios[6].util - scenarios[0].util).toFixed(1) + ' pp';
+        document.getElementById('impactCostRed').textContent = '₹' + (scenarios[0].costPH - scenarios[6].costPH).toFixed(2);
+        document.getElementById('impactIdleRed').textContent = (scenarios[0].idle - scenarios[6].idle) + ' hrs/day';
+
+        const INR = v => '₹' + v.toLocaleString('en-IN');
+        const facColors = ['#2EC4B6', '#1B2A4A', '#D4A853', '#E74C3C', '#27AE60', '#8E44AD', '#3498DB'];
+
+        // ── Utilization Bar Chart ─────────────────────────────────────
+        new Chart(document.getElementById('utilBar'), {
+            type: 'bar',
+            data: {
+                labels: facilities.map(f => f.name),
+                datasets: [{
+                    data: facilities.map(f => f.avgUtil),
+                    backgroundColor: facColors,
+                    borderRadius: 6,
+                    borderSkipped: false,
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: ctx => ctx.raw.toFixed(1) + '%' } }
+                },
+                scales: {
+                    y: { max: 100, ticks: { callback: v => v + '%' }, grid: { color: 'rgba(46,196,182,0.06)' } },
+                    x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                }
+            }
+        });
+
+        // ── Capacity Pie ──────────────────────────────────────────────
+        new Chart(document.getElementById('capPie'), {
+            type: 'doughnut',
+            data: {
+                labels: facilities.map(f => f.name),
+                datasets: [{
+                    data: facilities.map(f => f.capacity),
+                    backgroundColor: facColors,
+                    borderWidth: 0,
+                    hoverOffset: 12,
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                cutout: '55%',
+                plugins: {
+                    legend: { position: 'right', labels: { padding: 14, usePointStyle: true, pointStyle: 'rectRounded' } },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => ` ${ctx.label}: ${ctx.raw} (${(ctx.raw / 1190 * 100).toFixed(1)}%)`
+                        }
+                    }
+                }
+            }
+        });
+
+        // ── Hourly Usage Line Chart ───────────────────────────────────
+        new Chart(document.getElementById('hourlyChart'), {
+            type: 'line',
+            data: {
+                labels: HOURS,
+                datasets: facilities.map((f, i) => ({
+                    label: f.name,
+                    data: f.hourly.map(u => (u / f.capacity) * 100),
+                    borderColor: facColors[i],
+                    backgroundColor: facColors[i] + '20',
+                    fill: false,
+                    tension: 0.4,
+                    pointRadius: 3,
+                    pointHoverRadius: 6,
+                    borderWidth: 2,
+                }))
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top', labels: { usePointStyle: true, padding: 16 } },
+                    tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw.toFixed(1)}%` } }
+                },
+                scales: {
+                    y: { max: 100, ticks: { callback: v => v + '%' }, grid: { color: 'rgba(46,196,182,0.06)' } },
+                    x: { grid: { color: 'rgba(46,196,182,0.04)' } }
+                }
+            }
+        });
+
+        // ── Peak vs Avg Bar ───────────────────────────────────────────
+        new Chart(document.getElementById('peakAvgBar'), {
+            type: 'bar',
+            data: {
+                labels: facilities.map(f => f.name),
+                datasets: [
+                    {
+                        label: 'Peak Util %',
+                        data: facilities.map(f => f.peakUtil),
+                        backgroundColor: 'rgba(231, 76, 60, 0.7)',
+                        borderRadius: 4,
+                    },
+                    {
+                        label: 'Avg Util %',
+                        data: facilities.map(f => f.avgUtil),
+                        backgroundColor: 'rgba(46, 196, 182, 0.7)',
+                        borderRadius: 4,
+                    }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { usePointStyle: true, padding: 16 } },
+                    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.raw.toFixed(1) + '%' } }
+                },
+                scales: {
+                    y: { max: 100, ticks: { callback: v => v + '%' }, grid: { color: 'rgba(46,196,182,0.06)' } },
+                    x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                }
+            }
+        });
+
+        // ── Person-Hours Bar ──────────────────────────────────────────
+        new Chart(document.getElementById('personHrsBar'), {
+            type: 'bar',
+            data: {
+                labels: facilities.map(f => f.name),
+                datasets: [{
+                    data: facilities.map(f => f.totalPH),
+                    backgroundColor: facColors,
+                    borderRadius: 6,
+                    borderSkipped: false,
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                indexAxis: 'y',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: ctx => ctx.raw.toLocaleString('en-IN') + ' person-hrs' } }
+                },
+                scales: {
+                    x: { grid: { color: 'rgba(46,196,182,0.06)' } },
+                    y: { grid: { display: false } }
+                }
+            }
+        });
+
+        // ── Utilization Table ─────────────────────────────────────────
+        const utilBody = document.getElementById('utilTableBody');
+        facilities.forEach(f => {
+            const status = f.avgUtil >= 60 ? 'high' : f.avgUtil >= 35 ? 'medium' : 'low';
+            const statusLabel = f.avgUtil >= 60 ? 'Optimal' : f.avgUtil >= 35 ? 'Moderate' : 'Under-used';
+            utilBody.innerHTML += `<tr>
+                <td>${f.name}</td>
+                <td>${f.capacity}</td>
+                <td>${f.peakUsage}</td>
+                <td>${f.peakUtil.toFixed(1)}%</td>
+                <td>${f.avgUtil.toFixed(1)}%</td>
+                <td>${f.idleHrs}</td>
+                <td>${f.crowdedHrs}</td>
+                <td>${f.idleCapPct.toFixed(1)}%</td>
+                <td><span class="status ${status}">${statusLabel}</span></td>
+            </tr>`;
+        });
+
+        // ── Scenario Table ────────────────────────────────────────────
+        const scenBody = document.getElementById('scenarioTableBody');
+        scenarios.forEach(s => {
+            const cls = s.name.includes('Combined') ? ' class="highlight"' : '';
+            scenBody.innerHTML += `<tr${cls}>
+                <td>${s.name}</td>
+                <td>${s.util.toFixed(2)}%</td>
+                <td>${s.ph.toLocaleString('en-IN')}</td>
+                <td>${s.idle}</td>
+                <td>${s.crowded}</td>
+                <td>${INR(Math.round(s.cost))}</td>
+                <td>₹${s.costPH.toFixed(2)}</td>
+            </tr>`;
+        });
+
+        // ── Scenario Utilization Chart ────────────────────────────────
+        new Chart(document.getElementById('scenarioUtilBar'), {
+            type: 'bar',
+            data: {
+                labels: scenarios.map(s => s.name),
+                datasets: [{
+                    data: scenarios.map(s => s.util),
+                    backgroundColor: scenarios.map(s =>
+                        s.name.includes('Combined') ? '#D4A853' :
+                            s.util > scenarios[0].util ? '#27AE60' : '#1B2A4A'),
+                    borderRadius: 4,
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                indexAxis: 'y',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: ctx => ctx.raw.toFixed(1) + '%' } }
+                },
+                scales: {
+                    x: { ticks: { callback: v => v + '%' }, grid: { color: 'rgba(46,196,182,0.06)' } },
+                    y: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                }
+            }
+        });
+
+        // ── Scenario Cost Chart ───────────────────────────────────────
+        new Chart(document.getElementById('scenarioCostBar'), {
+            type: 'bar',
+            data: {
+                labels: scenarios.map(s => s.name),
+                datasets: [{
+                    data: scenarios.map(s => s.costPH),
+                    backgroundColor: scenarios.map(s =>
+                        s.name.includes('Combined') ? '#D4A853' :
+                            s.costPH < scenarios[0].costPH ? '#27AE60' : '#E74C3C'),
+                    borderRadius: 4,
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                indexAxis: 'y',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: ctx => '₹' + ctx.raw.toFixed(2) } }
+                },
+                scales: {
+                    x: { ticks: { callback: v => '₹' + v.toFixed(0) }, grid: { color: 'rgba(46,196,182,0.06)' } },
+                    y: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>
